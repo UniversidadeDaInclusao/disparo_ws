@@ -20,6 +20,8 @@ export interface Contact {
   email: string;
   rawPhone: unknown;
   phone: NormalizedPhone;
+  /** Todos os valores da linha, indexados pelo cabeçalho da coluna. */
+  fields: Record<string, string>;
 }
 
 export interface ParsedSheet {
@@ -29,6 +31,8 @@ export interface ParsedSheet {
     email?: string;
     phone?: string;
   };
+  /** Cabeçalhos das colunas da planilha (na ordem original). */
+  headers: string[];
   total: number;
   sheetName: string;
 }

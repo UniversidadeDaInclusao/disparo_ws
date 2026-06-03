@@ -38,10 +38,11 @@ export function parseSheet(arrayBuffer: ArrayBuffer): ParsedSheet {
   });
 
   if (!rows.length) {
-    return { contacts: [], columns: {}, total: 0, sheetName };
+    return { contacts: [], columns: {}, headers: [], total: 0, sheetName };
   }
 
   const headers = rows[0];
+  const headerList = headers.map((h) => String(h ?? "").trim());
   const colName = findColumn(headers, ["comprad", "nome", "name"]);
   const colEmail = findColumn(headers, ["email", "e-mail"]);
   const colPhone = findColumn(headers, ["telefone", "fone", "phone", "celular", "whats"]);
@@ -58,12 +59,19 @@ export function parseSheet(arrayBuffer: ArrayBuffer): ParsedSheet {
 
     if (!name && !email && !phone.ok) continue;
 
+    // Guarda todos os valores da linha, indexados pelo cabeçalho.
+    const fields: Record<string, string> = {};
+    headerList.forEach((h, idx) => {
+      if (h) fields[h] = String(row[idx] ?? "").trim();
+    });
+
     contacts.push({
       index: contacts.length,
       name: name || "(sem nome)",
       email,
       rawPhone,
       phone,
+      fields,
     });
   }
 
@@ -74,6 +82,7 @@ export function parseSheet(arrayBuffer: ArrayBuffer): ParsedSheet {
       email: colEmail >= 0 ? String(headers[colEmail]) : undefined,
       phone: colPhone >= 0 ? String(headers[colPhone]) : undefined,
     },
+    headers: headerList.filter(Boolean),
     total: contacts.length,
     sheetName,
   };

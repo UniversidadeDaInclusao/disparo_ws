@@ -65,6 +65,24 @@ npm run build
 npm run preview
 ```
 
+## Deploy (GitHub Pages)
+
+O repositório já tem um workflow (`.github/workflows/deploy.yml`) que builda e
+publica no GitHub Pages a cada push na `main`. Para ativar:
+
+1. **Settings → Secrets and variables → Actions → New repository secret**
+   - Nome: `VITE_GOOGLE_API_KEY` — valor: sua API Key.
+   - (Opcional) em *Variables*, `VITE_DRIVE_FOLDER_ID` com o ID da pasta.
+2. **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. Faça um push na `main` (ou rode o workflow manualmente em *Actions*).
+4. A URL publicada aparece no resumo do workflow / em *Settings → Pages*
+   (algo como `https://universidadedainclusao.github.io/disparo_ws/`).
+5. **Importante:** se a API Key tiver restrição por *Referenciadores HTTP*,
+   adicione essa URL do Pages (`https://<usuario>.github.io/*`) às restrições.
+
+> A mensagem do WhatsApp aceita variáveis das **colunas da planilha**: na tela
+> de composição, arraste os campos para dentro do texto (vira `{{Coluna}}`).
+
 ## Como usar
 
 1. Abra o app — ele lista os arquivos da pasta configurada.

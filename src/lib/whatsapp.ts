@@ -2,13 +2,40 @@
 
 import type { Contact } from "@/types";
 
-/** Substitui variáveis do template pelos dados do contato. */
+/** Normaliza um texto para comparar tokens/cabeçalhos (sem acento, minúsculo). */
+function norm(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "");
+}
+
+/** Atalhos sempre disponíveis, além das colunas reais da planilha. */
+const ALIASES: Record<string, (c: Contact) => string> = {
+  nome: (c) => c.name,
+  primeiro_nome: (c) => c.name.split(/\s+/)[0] || c.name,
+  email: (c) => c.email,
+};
+
+/** Resolve o valor de um token (conteúdo entre {{ }}) para um contato. */
+function resolveToken(rawKey: string, contact: Contact): string | null {
+  const key = norm(rawKey);
+  const alias = ALIASES[key];
+  if (alias) return alias(contact);
+
+  const hit = Object.entries(contact.fields).find(([header]) => norm(header) === key);
+  if (hit) return hit[1] ?? "";
+
+  return null;
+}
+
+/** Substitui {{coluna}} pelos dados do contato. Tokens desconhecidos ficam como estão. */
 export function buildMessage(template: string, contact: Contact): string {
-  const firstName = contact.name.split(/\s+/)[0] || contact.name;
-  return template
-    .replace(/\{\{\s*nome\s*\}\}/gi, contact.name)
-    .replace(/\{\{\s*primeiro_nome\s*\}\}/gi, firstName)
-    .replace(/\{\{\s*email\s*\}\}/gi, contact.email || "");
+  return template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (full, rawKey: string) => {
+    const value = resolveToken(rawKey, contact);
+    return value ?? full;
+  });
 }
 
 /** Gera o link wa.me já com número e texto. Abre o WhatsApp local/web. */

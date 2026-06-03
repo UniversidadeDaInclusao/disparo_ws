@@ -3,15 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Download, FileSpreadsheet, Info, RotateCcw } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TopBar } from "@/components/TopBar";
 import { ContactList } from "@/components/ContactList";
+import { MessageComposer, type MessageFormValues } from "@/components/MessageComposer";
 import { useDriveFiles, useSheet } from "@/hooks/useDrive";
 import { useSentTracker } from "@/hooks/useSentTracker";
 import { buildMessage, buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -23,7 +22,6 @@ const messageSchema = z.object({
   message: z.string().trim().min(1, "Escreva a mensagem antes de enviar."),
 });
 
-type MessageForm = z.infer<typeof messageSchema>;
 
 export function WorkspacePage() {
   const { fileId } = useParams<{ fileId: string }>();
@@ -37,13 +35,11 @@ export function WorkspacePage() {
   const isContactSent = (c: Contact) => tracker.isSent(contactKey(c));
   const contactSentAt = (c: Contact) => tracker.sentAt(contactKey(c));
 
-  const form = useForm<MessageForm>({
+  const form = useForm<MessageFormValues>({
     resolver: zodResolver(messageSchema),
     defaultValues: { message: "" },
     mode: "onChange",
   });
-
-  const message = form.watch("message");
 
   async function handleSend(contact: Contact) {
     const valid = await form.trigger("message");
@@ -109,29 +105,8 @@ export function WorkspacePage() {
               <CardHeader>
                 <CardTitle>Mensagem</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="message">Texto que será enviado</Label>
-                  <Textarea
-                    id="message"
-                    rows={10}
-                    placeholder={"Olá {{primeiro_nome}}, tudo bem?\n\nEscreva aqui sua mensagem..."}
-                    {...form.register("message")}
-                  />
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-destructive">
-                      {form.formState.errors.message?.message ?? ""}
-                    </span>
-                    <span className="text-muted-foreground">{message.length} caracteres</span>
-                  </div>
-                </div>
-                <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                  <p className="mb-1 flex items-center gap-1 font-medium text-foreground">
-                    <Info className="size-3" /> Variáveis disponíveis
-                  </p>
-                  <code>{"{{nome}}"}</code>, <code>{"{{primeiro_nome}}"}</code>,{" "}
-                  <code>{"{{email}}"}</code> — substituídas pelos dados do contato ao enviar.
-                </div>
+              <CardContent>
+                <MessageComposer form={form} headers={sheet.headers} />
               </CardContent>
             </Card>
 
