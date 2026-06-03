@@ -13,17 +13,32 @@ const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 
 /** Extrai uma mensagem de erro legível da resposta da API. */
 async function readError(res: Response): Promise<string> {
+  let message = "";
+  let reason = "";
   try {
     const data = await res.json();
-    const msg = data?.error?.message;
-    if (msg) return `${msg} (HTTP ${res.status})`;
+    message = data?.error?.message ?? "";
+    reason = data?.error?.errors?.[0]?.reason ?? data?.error?.status ?? "";
   } catch {
-    /* ignora corpo não-JSON */
+    /* corpo não-JSON */
   }
-  if (res.status === 403)
-    return "Acesso negado. Verifique se a pasta está compartilhada como 'qualquer pessoa com o link' e se a API Key é válida.";
-  if (res.status === 404) return "Pasta ou arquivo não encontrado. Confira o ID da pasta.";
-  return `Falha na requisição (HTTP ${res.status}).`;
+
+  // Dicas acionáveis para os motivos mais comuns de 403/400.
+  const hints: Record<string, string> = {
+    accessNotConfigured:
+      "A Google Drive API não está ativada neste projeto do Google Cloud. Ative em 'APIs e serviços > Biblioteca'.",
+    ipRefererBlocked:
+      "A API Key está restrita por 'Referenciadores HTTP' e este endereço não está liberado. Adicione, por ex., http://localhost:5173/* nas restrições da chave.",
+    forbidden:
+      "Acesso negado. Confirme se a pasta está compartilhada como 'Qualquer pessoa com o link pode ver'.",
+    keyInvalid: "A API Key é inválida. Verifique o valor de VITE_GOOGLE_API_KEY.",
+    dailyLimitExceededUnreg: "Sem identidade válida. Verifique a API Key.",
+    notFound: "Pasta/arquivo não encontrado. Confira o VITE_DRIVE_FOLDER_ID.",
+  };
+
+  const hint = hints[reason];
+  const base = message || `Falha na requisição (HTTP ${res.status}).`;
+  return [base, reason ? `[${reason}]` : "", hint ? `— ${hint}` : ""].filter(Boolean).join(" ");
 }
 
 /** Lista os arquivos dentro da pasta configurada. */
